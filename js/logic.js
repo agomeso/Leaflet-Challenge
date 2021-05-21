@@ -14,12 +14,25 @@ function createFeatures(earthquakeData) {
     // Give each feature a popup describing the place and time of the earthquake
     function onEachFeature(feature, layer) {
         layer.bindPopup("<h3>" + feature.properties.place +
-            "</h3><hr><p>" + new Date(feature.properties.time) + "</p>");
+            "</h3><hr><p>" + new Date(feature.properties.time) + "</p>" + "<p>Magnitude: " + feature.properties.mag + "</p>" + "<p>Depth: " + feature.geometry.coordinates[2] + "</p>");
+    }
+
+    // Function that will determine the color of circle based on altitude
+    function chooseColor(alt) {
+        if (alt <= 10) { return "rgb(74, 183, 255)" }
+        else if (alt > 10 && alt <= 30) { return "rgb(74, 255, 189)" }
+        else if (alt > 30 && alt <= 50) { return "rgb(31, 217, 22)" }
+        else if (alt > 50 && alt <= 70) { return "rgb(245, 170, 7)" }
+        else if (alt > 70 && alt <= 90) { return "rgb(245, 86, 7)" }
+        else if (alt > 90) { return "rgb(191, 6, 24)" }
     }
 
     function pointFunction(feature, layer) {
-        console.log(feature)
-        return L.circleMarker(layer, { radius: feature.properties.mag * 10 });
+        console.log(feature.geometry.coordinates[2])
+        return L.circleMarker(layer, {
+            radius: feature.properties.mag * 10,
+            color: chooseColor(feature.geometry.coordinates[2])
+        });
     }
     // Create a GeoJSON layer containing the features array on the earthquakeData object
     // Run the onEachFeature function once for each piece of data in the array
@@ -52,15 +65,36 @@ function createMap(earthquakes) {
         accessToken: API_KEY
     });
 
+    var outdoors = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+        attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
+        tileSize: 512,
+        maxZoom: 18,
+        zoomOffset: -1,
+        id: "mapbox/outdoors-v11",
+        accessToken: API_KEY
+    });
+
+    var satellite = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+        attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
+        tileSize: 512,
+        maxZoom: 18,
+        zoomOffset: -1,
+        id: "mapbox/satellite-v9",
+        accessToken: API_KEY
+    });
+
     // Define a baseMaps object to hold our base layers
     var baseMaps = {
         "Street Map": streetmap,
-        "Dark Map": darkmap
+        "Dark Map": darkmap,
+        "Outdoors": outdoors,
+        "Satellite": satellite
     };
 
     // Create overlay object to hold our overlay layer
     var overlayMaps = {
-        Earthquakes: earthquakes
+        "Earthquakes": earthquakes,
+        // "Tectonic plates": tectonicplates
     };
 
     // Create our map, giving it the streetmap and earthquakes layers to display on load
@@ -79,3 +113,31 @@ function createMap(earthquakes) {
         collapsed: false
     }).addTo(myMap);
 }
+
+// Set up the legend
+var legend = L.control({ position: "bottomleft" });
+legend.onAdd = function (map) {
+    var div = L.DomUtil.create("div", "legend");
+    div.innerHTML += "<h4>Depth</h4>";
+    div.innerHTML += `<i style="background: rgb(74, 183, 255)"></i><span>-10 to 10</span><br>`;
+    div.innerHTML += `<i style="background: rgb(74, 255, 189)"></i><span>10 to 30</span><br>`;
+    div.innerHTML += `<i style="background: rgb(31, 217, 22)"></i><span>30 to 50</span><br>`;
+    div.innerHTML += `<i style="background: rgb(245, 170, 7)"></i><span>50 to 70</span><br>`;
+    div.innerHTML += `<i style="background: rgb(245, 86, 7)"></i><span>70 to 90</span><br>`;
+    div.innerHTML += `<i style="background: rgb(191, 6, 24)"></i><span>Deeper than 90</span><br>`;
+    return div;
+};
+
+// Adding legend to the map
+legend.addTo(myMap);
+
+// Use this link to get the geojson data.
+var link = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_plates.json";
+
+// var tectonicplates;
+
+// Grabbing our GeoJSON data..
+d3.json(link).then(function (data) {
+    // Creating a GeoJSON layer with the retrieved data
+    L.geoJson(data).addTo(myMap);
+});
