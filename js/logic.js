@@ -94,7 +94,7 @@ function createMap(earthquakes) {
     // Create overlay object to hold our overlay layer
     var overlayMaps = {
         "Earthquakes": earthquakes,
-        // "Tectonic plates": tectonicplates
+        "Tectonic plates": tectonicplates
     };
 
     // Create our map, giving it the streetmap and earthquakes layers to display on load
@@ -112,32 +112,34 @@ function createMap(earthquakes) {
     L.control.layers(baseMaps, overlayMaps, {
         collapsed: false
     }).addTo(myMap);
+
+
+    // Set up the legend
+    var legend = L.control({ position: "bottomleft" });
+    legend.onAdd = function (map) {
+        var div = L.DomUtil.create("div", "legend");
+        div.innerHTML += "<h4>Depth</h4>";
+        div.innerHTML += `<i style="background: rgb(74, 183, 255)"></i><span>-10 to 10</span><br>`;
+        div.innerHTML += `<i style="background: rgb(74, 255, 189)"></i><span>10 to 30</span><br>`;
+        div.innerHTML += `<i style="background: rgb(31, 217, 22)"></i><span>30 to 50</span><br>`;
+        div.innerHTML += `<i style="background: rgb(245, 170, 7)"></i><span>50 to 70</span><br>`;
+        div.innerHTML += `<i style="background: rgb(245, 86, 7)"></i><span>70 to 90</span><br>`;
+        div.innerHTML += `<i style="background: rgb(191, 6, 24)"></i><span>Deeper than 90</span><br>`;
+        return div;
+    };
+
+    // Adding legend to the map
+    legend.addTo(myMap);
+
+
+    // Use this link to get the geojson data.
+    var link = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_plates.json";
+
+    // var tectonicplates;
+
+    // Grabbing our GeoJSON data..
+    d3.json(link).then(function (data) {
+        // Creating a GeoJSON layer with the retrieved data
+        L.geoJson(data).addTo(myMap);
+    });
 }
-
-// Set up the legend
-var legend = L.control({ position: "bottomleft" });
-legend.onAdd = function (map) {
-    var div = L.DomUtil.create("div", "legend");
-    div.innerHTML += "<h4>Depth</h4>";
-    div.innerHTML += `<i style="background: rgb(74, 183, 255)"></i><span>-10 to 10</span><br>`;
-    div.innerHTML += `<i style="background: rgb(74, 255, 189)"></i><span>10 to 30</span><br>`;
-    div.innerHTML += `<i style="background: rgb(31, 217, 22)"></i><span>30 to 50</span><br>`;
-    div.innerHTML += `<i style="background: rgb(245, 170, 7)"></i><span>50 to 70</span><br>`;
-    div.innerHTML += `<i style="background: rgb(245, 86, 7)"></i><span>70 to 90</span><br>`;
-    div.innerHTML += `<i style="background: rgb(191, 6, 24)"></i><span>Deeper than 90</span><br>`;
-    return div;
-};
-
-// Adding legend to the map
-legend.addTo(myMap);
-
-// Use this link to get the geojson data.
-var link = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_plates.json";
-
-// var tectonicplates;
-
-// Grabbing our GeoJSON data..
-d3.json(link).then(function (data) {
-    // Creating a GeoJSON layer with the retrieved data
-    L.geoJson(data).addTo(myMap);
-});
